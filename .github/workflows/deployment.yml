@@ -13,7 +13,7 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Verify existing containers
+    - name: Check containers
       shell: cmd
       run: |
         echo "Using existing production containers:"
