@@ -82,19 +82,12 @@ jobs:
 
     - name: Generate test report
       run: |
-        @"
-# Deployment Test Report
-- Deployment Date: $(Get-Date)
-- Status: Success
-- Running Containers: 2
-- Application Port: ${{ secrets.APP_PORT }}
-- Database Port: 5432
-
-## Test Results
-- Application Server: Online
-- Database: Connected
-- Container Health: All services running
-"@ | Out-File -FilePath test-report.md -Encoding utf8
+        "# Deployment Test Report" | Out-File test-report.md -Encoding utf8
+        "- Deployment Date: $(Get-Date)" | Out-File test-report.md -Append -Encoding utf8
+        "- Status: Success" | Out-File test-report.md -Append -Encoding utf8
+        "- Running Containers: 2" | Out-File test-report.md -Append -Encoding utf8
+        "- Application Port: ${{ secrets.APP_PORT }}" | Out-File test-report.md -Append -Encoding utf8
+        "- Database Port: 5432" | Out-File test-report.md -Append -Encoding utf8
 
     - name: Upload configuration artifacts
       uses: actions/upload-artifact@v4
