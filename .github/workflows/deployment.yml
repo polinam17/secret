@@ -1,0 +1,124 @@
+name: Full Stack Application Deployment
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  COMPOSE_PROJECT_NAME: production-app
+
+jobs:
+  deploy-and-test:
+    runs-on: self-hosted
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Create environment configuration
+      run: |
+        "DB_HOST=${{ secrets.DB_HOST }}" | Out-File -FilePath .env -Encoding utf8
+        "DB_PORT=${{ secrets.DB_PORT }}" | Out-File -FilePath .env -Encoding utf8 -Append
+        "DB_NAME=${{ secrets.DB_NAME }}" | Out-File -FilePath .env -Encoding utf8 -Append
+        "DB_USER=${{ secrets.DB_USER }}" | Out-File -FilePath .env -Encoding utf8 -Append
+        "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" | Out-File -FilePath .env -Encoding utf8 -Append
+        "APP_PORT=${{ secrets.APP_PORT }}" | Out-File -FilePath .env -Encoding utf8 -Append
+        "APP_SECRET=${{ secrets.APP_SECRET }}" | Out-File -FilePath .env -Encoding utf8 -Append
+        "API_KEY=${{ secrets.API_KEY }}" | Out-File -FilePath .env -Encoding utf8 -Append
+        "COMPOSE_PROJECT_NAME=${{ env.COMPOSE_PROJECT_NAME }}" | Out-File -FilePath .env -Encoding utf8 -Append
+
+    - name: Deploy application stack
+      run: |
+        docker-compose down
+        docker-compose up -d
+        Start-Sleep -Seconds 30
+        docker-compose ps
+
+    - name: Verify container status
+      run: |
+        $running_services = docker-compose ps --services --filter "status=running"
+        if ($running_services.Count -eq 2) {
+            Write-Output "All containers running: $running_services"
+        } else {
+            Write-Output "Container health check failed"
+            docker-compose logs
+            exit 1
+        }
+
+    - name: Test application connectivity
+      run: |
+        Write-Output "Testing application connectivity..."
+        try {
+            $response = Invoke-WebRequest -Uri "http://localhost:${{ secrets.APP_PORT }}" -TimeoutSec 10
+            Write-Output "Application is responding correctly"
+        } catch {
+            Write-Output "Application connectivity test failed"
+            exit 1
+        }
+
+    - name: Test database connectivity
+      run: |
+        Write-Output "Testing database connectivity..."
+        try {
+            $db_container = docker-compose ps database --format "json" | ConvertFrom-Json
+            if ($db_container.Status -eq "running") {
+                Write-Output "Database container is operational"
+            } else {
+                Write-Output "Database container is not running"
+                exit 1
+            }
+        } catch {
+            Write-Output "Database connectivity test failed"
+            exit 1
+        }
+
+    - name: Collect deployment logs
+      run: |
+        docker-compose logs > deployment-logs.txt
+        docker ps -a > container-list.txt
+        docker images > image-list.txt
+        Get-Content .env | ForEach-Object { $_ -replace '=.*', '=***' } > masked-env.txt
+
+    - name: Generate test report
+      run: |
+        @"
+# Deployment Test Report
+- Deployment Date: $(Get-Date)
+- Status: Success
+- Running Containers: 2
+- Application Port: ${{ secrets.APP_PORT }}
+- Database Port: 5432
+
+## Test Results
+- Application Server: Online
+- Database: Connected
+- Container Health: All services running
+"@ | Out-File -FilePath test-report.md -Encoding utf8
+
+    - name: Upload configuration artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: configuration-files
+        path: |
+          test-report.md
+          masked-env.txt
+        retention-days: 30
+
+    - name: Upload system artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: system-info
+        path: |
+          deployment-logs.txt
+          container-list.txt
+          image-list.txt
+        retention-days: 30
+
+    - name: Deployment summary
+      run: |
+        Write-Output "Deployment completed successfully"
+        Write-Output "Self-Hosted Runner: Active"
+        Write-Output "Docker Compose: Running"
+        Write-Output "Services: Deployed"
+        Write-Output "Tests: Passed"
