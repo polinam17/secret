@@ -24,8 +24,8 @@ jobs:
     - name: Test web application connectivity
       shell: cmd
       run: |
-        echo "Testing production web application on port 3000..."
-        curl -f http://localhost:3000 || echo "Web application connectivity verified"
+        echo "Testing production web application on port 8000..."
+        curl -f http://localhost:8000 || echo "Web application connectivity verified"
         echo "Production web application test completed"
 
     - name: Test database connectivity
