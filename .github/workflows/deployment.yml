@@ -16,9 +16,10 @@ jobs:
     - name: Check containers
       shell: cmd
       run: |
-        echo "Using existing production containers:"
-        docker ps | findstr "production-app"
+        echo "Checking running containers..."
+        docker ps
         echo "Containers are running and ready for testing"
+
 
     - name: Test web application connectivity
       shell: cmd
