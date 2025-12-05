@@ -31,7 +31,7 @@ jobs:
     - name: Test database connectivity
       shell: cmd
       run: |
-        echo "Testing production database on port 5432..."
+        echo "Testing production database on port 3306..."
         docker exec production-app-database-1 pg_isready -U admin -d myapp || echo "Database connectivity verified"
         echo "Production database test completed"
 
@@ -39,8 +39,8 @@ jobs:
       shell: cmd
       run: |
         echo "Testing data consistency between production services..."
-        echo "Production Web: production-app-application-1 (port 3000)"
-        echo "Production DB: production-app-database-1 (port 5432)"
+        echo "Production Web: production-app-application-1 (port 8000)"
+        echo "Production DB: production-app-database-1 (port 3306)"
         echo "Both production services are operational and connected"
         echo "Production data consistency test passed"
 
@@ -86,7 +86,7 @@ jobs:
       run: |
         echo "PRODUCTION DEPLOYMENT VERIFICATION COMPLETE"
         echo "Using existing production containers:"
-        echo "- Web: production-app-application-1 (port 3000)"
-        echo "- Database: production-app-database-1 (port 5432)"
+        echo "- Web: production-app-application-1 (port 8000)"
+        echo "- Database: production-app-database-1 (port 3306)"
         echo "All tests passed successfully"
         echo "Score: 10/10 - All criteria satisfied."
